@@ -5,18 +5,20 @@ from PIL import Image
 import numpy as np
 import gdown
 import os
+import pandas as pd
 
+# Download the v3 model from Google Drive
 if not os.path.exists("pneumothorax_model.pth"):
     with st.spinner("Downloading model..."):
         gdown.download(
-            "https://drive.google.com/uc?id=1ux4moHshP9DCMhYpvqajlMQE1FOlFfwA",
+            "https://drive.google.com/uc?id=1IojOmzUuJXH_Dq6unoDnRPVWU2rFd1pV",
             "pneumothorax_model.pth",
             quiet=False
         )
 
 st.set_page_config(
     page_title="PneumoAI",
-    page_icon="🫁",
+    page_icon="",
     layout="wide"
 )
 
@@ -92,12 +94,12 @@ transform = transforms.Compose([
                          [0.229, 0.224, 0.225])
 ])
 
-tabs = st.tabs(["🫁 Detector", "📊 How It Works", "📁 Dataset", "🧠 The Model", "👤 About Me"])
+tabs = st.tabs(["Detector", "How It Works", "Dataset", "The Model", "About Me"])
 
 
 # ─── TAB 1: DETECTOR ───────────────────────────────────────────────────────────
 with tabs[0]:
-    st.title("🫁 Pneumothorax AI Detector")
+    st.title("Pneumothorax AI Detector")
     st.markdown("Upload a chest X-ray and the AI will analyze it for signs of Pneumothorax.")
 
     model = load_model()
@@ -128,14 +130,14 @@ with tabs[0]:
             if prediction == 1:
                 st.markdown(f"""
                 <div class="result-box sick-box">
-                    <h2>⚠️ Pneumothorax Detected</h2>
+                    <h2>Pneumothorax Detected</h2>
                     <p style="font-size:1.1rem">Confidence: <strong>{confidence:.1f}%</strong></p>
                 </div>
                 """, unsafe_allow_html=True)
             else:
                 st.markdown(f"""
                 <div class="result-box healthy-box">
-                    <h2>✅ No Pneumothorax Detected</h2>
+                    <h2>No Pneumothorax Detected</h2>
                     <p style="font-size:1.1rem">Confidence: <strong>{confidence:.1f}%</strong></p>
                 </div>
                 """, unsafe_allow_html=True)
@@ -150,13 +152,13 @@ with tabs[0]:
 
             st.markdown("""
             <div class="warning-box">
-                ⚠️ <strong>Medical Disclaimer:</strong> This tool is an AI research project 
+                <strong>Medical Disclaimer:</strong> This tool is an AI research project 
                 and is NOT a medical device. Do not use for actual medical diagnosis. 
                 Always consult a qualified physician.
             </div>
             """, unsafe_allow_html=True)
         else:
-            st.info("👈 Upload an X-ray image on the left to get started")
+            st.info("Upload an X-ray image on the left to get started")
             st.markdown("""
             #### What is Pneumothorax?
             Pneumothorax is a collapsed lung — a condition where air leaks into 
@@ -174,11 +176,12 @@ with tabs[0]:
 
 # ─── TAB 2: HOW IT WORKS ───────────────────────────────────────────────────────
 with tabs[1]:
-    st.title("📊 How It Works")
-    st.markdown("This project went through **2 full iterations** before reaching 82.5% accuracy.")
+    st.title("How It Works")
+    st.markdown("This project went through **3 full iterations**, evolving from 57% to **83% accuracy** on 694 unseen X-rays.")
 
     st.markdown("---")
 
+    # ─── Iteration 1 ───────────────────────────────────────────────────────────
     st.markdown("### Iteration 1 — Hand-Crafted Features + SVM")
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -199,34 +202,94 @@ with tabs[1]:
 
     st.markdown("---")
 
-    st.markdown("### Iteration 2 — ResNet18 Transfer Learning")
+    # ─── Iteration 2 ───────────────────────────────────────────────────────────
+    st.markdown("### Iteration 2 — ResNet18 Transfer Learning (Small Dataset)")
     col1, col2, col3 = st.columns(3)
     with col1:
         st.markdown('<div class="stat-card"><div class="stat-number">200</div><div class="stat-label">X-rays trained on</div></div>', unsafe_allow_html=True)
     with col2:
         st.markdown('<div class="stat-card"><div class="stat-number">10</div><div class="stat-label">Training epochs</div></div>', unsafe_allow_html=True)
     with col3:
-        st.markdown('<div class="stat-card"><div class="stat-number">82.5%</div><div class="stat-label">Final test accuracy</div></div>', unsafe_allow_html=True)
+        st.markdown('<div class="stat-card"><div class="stat-number">80%</div><div class="stat-label">Final test accuracy</div></div>', unsafe_allow_html=True)
 
     st.markdown("""
     Instead of hand-crafting features, the raw X-ray pixels were fed directly into 
     ResNet18 — a deep convolutional neural network pretrained on 1.2 million everyday photos.
-    The model learned what Pneumothorax looks like on its own.
+    The model learned what Pneumothorax looks like on its own. However, with only 200 images, 
+    the model memorized the training set by epoch 3 (overfitting).
     """)
 
-    st.markdown("#### Training Progress")
-    epochs = list(range(1, 11))
-    train_acc = [66.25, 98.75, 100, 99.38, 100, 100, 100, 100, 100, 100]
-    loss = [0.6202, 0.1116, 0.0358, 0.0299, 0.0080, 0.0087, 0.0033, 0.0046, 0.0136, 0.0031]
+    st.markdown("#### Training Progress (Iteration 2)")
+    epochs_v2 = list(range(1, 11))
+    train_acc_v2 = [58.75, 97.50, 100, 100, 100, 100, 100, 100, 100, 100]
+    loss_v2 = [0.6937, 0.1376, 0.0575, 0.0165, 0.0082, 0.0031, 0.0047, 0.0042, 0.0032, 0.0049]
 
-    import pandas as pd
-    chart_data = pd.DataFrame({"Train Accuracy (%)": train_acc}, index=epochs)
-    st.line_chart(chart_data)
+    chart_v2 = pd.DataFrame({
+        "Train Accuracy (%)": train_acc_v2,
+        "Loss x 100": [l * 100 for l in loss_v2]
+    }, index=epochs_v2)
+    st.line_chart(chart_v2)
+    st.caption("Train accuracy jumped to 100% by epoch 3 — a classic sign of overfitting on a small dataset.")
+
+    st.markdown("---")
+
+    # ─── Iteration 3 ───────────────────────────────────────────────────────────
+    st.markdown("### Iteration 3 — ResNet18 with Larger Dataset + Class Weights")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown('<div class="stat-card"><div class="stat-number">4,694</div><div class="stat-label">X-rays trained on</div></div>', unsafe_allow_html=True)
+    with col2:
+        st.markdown('<div class="stat-card"><div class="stat-number">10</div><div class="stat-label">Training epochs</div></div>', unsafe_allow_html=True)
+    with col3:
+        st.markdown('<div class="stat-card"><div class="stat-number">83%</div><div class="stat-label">Final test accuracy</div></div>', unsafe_allow_html=True)
+
+    st.markdown("""
+    For Iteration 3, the dataset was scaled up **23x larger** — from 200 to 4,694 images 
+    (2,194 Pneumothorax + 2,500 Healthy). The model was also upgraded with:
+    
+    - **Class weights** to balance the slight imbalance between sick and healthy cases
+    - **Stronger data augmentation** (rotation, horizontal flip) to prevent memorization
+    - **GPU training** on Kaggle's Tesla T4 for fast experimentation
+    - **Larger test set** (694 unseen images vs. just 40 before) — making the 83% accuracy 
+      a far more reliable measurement
+    
+    The result: the model learned more **gradually** (not memorizing instantly), reaching 
+    96% train accuracy by epoch 3 instead of 100%. This indicates healthier learning behavior.
+    """)
+
+    st.markdown("#### Training Progress (Iteration 3)")
+    epochs_v3 = list(range(1, 11))
+    train_acc_v3 = [75.20, 89.75, 96.08, 98.15, 98.17, 98.25, 97.88, 98.05, 98.12, 98.42]
+    loss_v3 = [0.5072, 0.2534, 0.1099, 0.0533, 0.0511, 0.0456, 0.0560, 0.0578, 0.0491, 0.0409]
+
+    chart_v3 = pd.DataFrame({
+        "Train Accuracy (%)": train_acc_v3,
+        "Loss x 100": [l * 100 for l in loss_v3]
+    }, index=epochs_v3)
+    st.line_chart(chart_v3)
+    st.caption("Smoother learning curve — the model takes 3-4 epochs to converge instead of memorizing instantly.")
+
+    st.markdown("---")
+
+    # ─── Comparison ───────────────────────────────────────────────────────────
+    st.markdown("### Iteration Comparison")
+    comparison = pd.DataFrame({
+        "Iteration": ["v1 - SVM", "v2 - ResNet18 Small", "v3 - ResNet18 Large"],
+        "Training Images": [200, 200, 4694],
+        "Test Set Size": [40, 40, 694],
+        "Test Accuracy": ["~57%", "80%", "83%"],
+        "Notes": [
+            "Hand-crafted features failed",
+            "Overfit by epoch 3",
+            "Healthier learning curve, larger reliable test set"
+        ]
+    })
+    st.table(comparison)
 
 
 # ─── TAB 3: DATASET ────────────────────────────────────────────────────────────
 with tabs[2]:
-    st.title("📁 Dataset")
+    st.title("Dataset")
     st.markdown("The model was trained on data from the **NIH Chest X-ray Dataset**.")
 
     col1, col2 = st.columns(2)
@@ -237,36 +300,51 @@ with tabs[2]:
 
     st.markdown("---")
 
-    st.markdown("### What We Used")
+    st.markdown("### What Iteration 3 Uses")
     col1, col2 = st.columns(2)
     with col1:
         st.markdown("""
         **Positive cases (sick)**
-        - 100 X-rays labeled as Pneumothorax
+        - 2,194 X-rays labeled as Pneumothorax
+        - All available Pneumothorax cases in the NIH dataset
         - Patients with a confirmed collapsed lung
         """)
     with col2:
         st.markdown("""
         **Control cases (healthy)**
-        - 100 X-rays labeled as "No Finding"
+        - 2,500 X-rays labeled as "No Finding"
         - Patients with completely normal lungs
+        - Selected from 60,361 available healthy cases
         """)
 
     st.markdown("---")
+
+    st.markdown("### Train / Test Split")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown('<div class="stat-card"><div class="stat-number">4,694</div><div class="stat-label">Total images used</div></div>', unsafe_allow_html=True)
+    with col2:
+        st.markdown('<div class="stat-card"><div class="stat-number">4,000</div><div class="stat-label">Training set</div></div>', unsafe_allow_html=True)
+    with col3:
+        st.markdown('<div class="stat-card"><div class="stat-number">694</div><div class="stat-label">Unseen test set</div></div>', unsafe_allow_html=True)
+
+    st.markdown("---")
     st.markdown("""
-    ### Why Only 200 Images?
-    The NIH dataset has thousands of Pneumothorax cases, but we deliberately kept 
-    it small (200 total) as a proof of concept. Even with just 200 images, the model 
-    achieved 82.5% accuracy — demonstrating that transfer learning is powerful 
-    even with limited data.
+    ### Why Scale Up From 200 to 4,694?
+    Iteration 2 only used 200 images and tested on just 40 — way too small to trust 
+    the results. The model also overfit instantly because there wasn't enough variety 
+    to actually learn from.
     
-    More images would push accuracy higher and reduce overfitting.
+    Iteration 3 used **every available Pneumothorax case** in the NIH dataset (2,194) 
+    plus a balanced number of healthy controls (2,500). This made the training more 
+    realistic and produced a test accuracy (83%) on 694 unseen images that is much 
+    more trustworthy than the previous 80% on only 40 images.
     """)
 
 
 # ─── TAB 4: THE MODEL ──────────────────────────────────────────────────────────
 with tabs[3]:
-    st.title("🧠 The Model")
+    st.title("The Model")
 
     st.markdown("### ResNet18 Architecture")
     st.markdown("""
@@ -300,28 +378,42 @@ with tabs[3]:
         """)
 
     st.markdown("---")
-    st.markdown("### Training Configuration")
+    st.markdown("### Training Configuration (Iteration 3)")
     config = {
-        "Parameter": ["Optimizer", "Learning Rate", "Epochs", "Batch Size", "Loss Function", "Train/Test Split"],
-        "Value": ["Adam", "0.0001", "10", "16", "Cross Entropy Loss", "80% / 20%"]
+        "Parameter": [
+            "Optimizer", "Learning Rate", "Epochs", "Batch Size",
+            "Loss Function", "Train/Test Split", "Dataset Size",
+            "Class Weights", "Augmentation", "Hardware"
+        ],
+        "Value": [
+            "Adam", "0.0001", "10", "32",
+            "Cross Entropy Loss (weighted)", "4000 / 694", "4,694 images",
+            "[0.94, 1.07]", "Random Flip + Rotation", "Tesla T4 GPU (Kaggle)"
+        ]
     }
-    import pandas as pd
     st.table(pd.DataFrame(config))
 
     st.markdown("---")
-    st.markdown("### Overfitting Note")
+    st.markdown("### Overfitting Analysis")
     st.info("""
-    The model reached 100% training accuracy by epoch 3, which indicates overfitting 
-    (memorizing the training images). Despite this, it still achieved 82.5% on unseen 
-    test images — thanks to ResNet's strong pretrained visual representations carrying over.
+    **Iteration 2** reached 100% training accuracy by epoch 3 — clear memorization 
+    on the tiny 200-image dataset.
     
-    Next steps to reduce overfitting: more training images, dropout layers, early stopping.
+    **Iteration 3** reached 96% by epoch 3 and plateaued at 98% — a much healthier 
+    curve, but still some overfitting. The 15% gap between train (98%) and test (83%) 
+    accuracy suggests the model could benefit from:
+    - Dropout layers
+    - Early stopping (training stops when validation accuracy plateaus)
+    - Even more data
+    - Weight decay regularization
+    
+    These improvements are planned for a future Iteration 4.
     """)
 
 
 # ─── TAB 5: ABOUT ME ───────────────────────────────────────────────────────────
 with tabs[4]:
-    st.title("👤 About Me")
+    st.title("About Me")
 
     col1, col2 = st.columns([1, 2], gap="large")
 
@@ -348,9 +440,10 @@ with tabs[4]:
     - Building and deploying ML models
     - The full pipeline from raw data to working application
     
-    The project went through two full iterations — starting with a basic 
-    SVM approach (~57% accuracy) and evolving to a ResNet18 deep learning 
-    model achieving **82.5% accuracy**.
+    The project went through three full iterations — starting with a basic 
+    SVM approach (~57% accuracy), evolving to a small ResNet18 (80%), and finally 
+    scaling up to a 4,694-image ResNet18 model achieving **83% accuracy** on 
+    694 unseen X-rays.
     """)
 
     st.markdown("---")
@@ -358,18 +451,18 @@ with tabs[4]:
     st.markdown("### Tech Stack")
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.markdown('<div class="stat-card"><div class="stat-number">🔥</div><div class="stat-label">PyTorch</div></div>', unsafe_allow_html=True)
+        st.markdown('<div class="stat-card"><div class="stat-number">PyTorch</div><div class="stat-label">Deep learning framework</div></div>', unsafe_allow_html=True)
     with col2:
-        st.markdown('<div class="stat-card"><div class="stat-number">🌊</div><div class="stat-label">Streamlit</div></div>', unsafe_allow_html=True)
+        st.markdown('<div class="stat-card"><div class="stat-number">Streamlit</div><div class="stat-label">Web app framework</div></div>', unsafe_allow_html=True)
     with col3:
-        st.markdown('<div class="stat-card"><div class="stat-number">📓</div><div class="stat-label">Kaggle</div></div>', unsafe_allow_html=True)
+        st.markdown('<div class="stat-card"><div class="stat-number">Kaggle</div><div class="stat-label">GPU training</div></div>', unsafe_allow_html=True)
     with col4:
-        st.markdown('<div class="stat-card"><div class="stat-number">🏥</div><div class="stat-label">NIH Dataset</div></div>', unsafe_allow_html=True)
+        st.markdown('<div class="stat-card"><div class="stat-number">NIH</div><div class="stat-label">Dataset source</div></div>', unsafe_allow_html=True)
 
     st.markdown("---")
     st.markdown("""
     <div class="warning-box">
-        ⚠️ <strong>Disclaimer:</strong> This project is for educational purposes only. 
+        <strong>Disclaimer:</strong> This project is for educational purposes only. 
         It is not a certified medical device and should never be used for actual clinical diagnosis.
     </div>
     """, unsafe_allow_html=True)
