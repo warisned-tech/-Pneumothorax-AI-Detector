@@ -17,10 +17,30 @@ if not os.path.exists("pneumothorax_model.pth"):
         )
 
 st.set_page_config(
-    page_title="PneumoAI",
-    page_icon="",
+    page_title="Pneumothorax Detector by Waris Chaopricha",
+    page_icon="🫁",
     layout="wide"
 )
+
+# Hidden structured data so Google knows this website belongs to you
+import streamlit.components.v1 as components
+schema = """
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": "Waris Chaopricha",
+  "url": "https://pneumothorax.streamlit.app/",
+  "worksFor": {
+    "@type": "WebSite",
+    "name": "Pneumothorax AI Detector",
+    "url": "https://pneumothorax.streamlit.app/"
+  },
+  "sameAs": ["https://waris-marketwatch.vercel.app/"]
+}
+</script>
+"""
+components.html(schema, height=0)
 
 st.markdown("""
 <style>
@@ -100,7 +120,8 @@ tabs = st.tabs(["Detector", "How It Works", "Dataset", "The Model", "About Me"])
 # ─── TAB 1: DETECTOR ───────────────────────────────────────────────────────────
 with tabs[0]:
     st.title("Pneumothorax AI Detector")
-    st.markdown("Upload a chest X-ray and the AI will analyze it for signs of Pneumothorax.")
+    st.caption("Built by **Waris Chaopricha**")
+    st.markdown("Upload a chest X-ray and the AI will analyze it for signs of Pneumothorax.")mothorax.")
 
     model = load_model()
 
