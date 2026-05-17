@@ -6,6 +6,7 @@ import numpy as np
 import gdown
 import os
 import pandas as pd
+import streamlit.components.v1 as components
 
 # Download the v3 model from Google Drive
 if not os.path.exists("pneumothorax_model.pth"):
@@ -22,8 +23,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Hidden structured data so Google knows this website belongs to you
-import streamlit.components.v1 as components
+# Hidden structured data so Google knows this website belongs to Waris Chaopricha
 schema = """
 <script type="application/ld+json">
 {
@@ -121,7 +121,7 @@ tabs = st.tabs(["Detector", "How It Works", "Dataset", "The Model", "About Me"])
 with tabs[0]:
     st.title("Pneumothorax AI Detector")
     st.caption("Built by **Waris Chaopricha**")
-    st.markdown("Upload a chest X-ray and the AI will analyze it for signs of Pneumothorax.")mothorax.")
+    st.markdown("Upload a chest X-ray and the AI will analyze it for signs of Pneumothorax.")
 
     model = load_model()
 
@@ -447,8 +447,10 @@ with tabs[4]:
         **Student | AI & ML Enthusiast**
         
         I'm a 17-year-old student passionate about using AI to solve real-world problems, 
-        particularly in healthcare. This project was built to explore how deep learning 
-        can assist in medical image analysis.
+        particularly in healthcare. 
+        
+        This Pneumothorax detector and my other project **[MarketWatch](https://waris-marketwatch.vercel.app/)** 
+        (a live stock & crypto tracker) were built to explore real-world applications of AI and full-stack development.
         """)
 
     st.markdown("---")
